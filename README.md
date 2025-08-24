@@ -1,2 +1,33 @@
 # pic32clang_docs
-Documentation specific to Pic32Clang
+
+This repository contains documentation specific to Pic32Clang, which is a distribution of LLVM set
+up for use with Microchip PIC32C and SAM processors. This is meant to be run with the `buildPic32Clang`
+script found [here](https://github.com/jdeguire/buildPic32Clang), but you can also run this on its own.
+
+## Prerequisites
+If you are planning on running the `buildPic32Clang` script referenced above, then you can follow the
+README in that project to get everything you need. Otherwise, these instructions should help you get
+going.
+
+This project uses the [Sphinx](www.sphinx-doc.org) documentation generator. Sphinx is a Python program,
+so you'll need to install a recent vesion of Python on your system. The latest version at the time of
+this writing is Python 3.13, but later Python 3.xx versions should work fine as should versions that
+are a few point releases back. If you are using Windows, then you can install Python either from the
+Windows Store or from the [Python website](https://www.python.org/downloads/). If you are on Linux,
+then Python will likely be available in your distribution's package manager.
+
+Install Sphinx using the directions on the [Sphinx website](https://www.sphinx-doc.org/en/master/usage/installation.html).
+If you are on Windows, then follow the instructions for getting the PyPI package with `pip`. Otherwise,
+follow the OS-specific instructions there. Some Linux distributions, like ones basd on Ubuntu, want
+you to get packages from the system package manager rather than using `pip`.
+
+You also need the `myst-parser` package. Install that from `pip` or your system's package manager.
+
+## Building the Docs
+To build the docs into a series of HTML files, simply run `make html' from this directory. On Windows,
+the `make.bat` file should run. On other systems, GNU Make will be run and will use the `Makefile`
+in this directory.
+
+## License
+See the LICENSE file for the full thing, but basically this is licensed using the BSD 3-clause
+license because I don't know anything about licenses and that one seemed good.
