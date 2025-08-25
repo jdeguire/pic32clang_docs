@@ -17,7 +17,7 @@ clang++ -o hello.elf hello.cpp
 
 This should compile your C++ file, link it with the provided runtime libraries, and output an ELF file.
 What it will *actually* do is exit with an error. Clang thinks you want to build your code for x86
-processors because you didn't tell it otherwise. LLVM for PIC32® does not include libraries for x86
+processors because you didn't tell it otherwise. Clang4PIC32® does not include libraries for x86
 processors, so the link will fail. You therefore need to tell Clang about your device so it knows how
 to build your code. There are plenty of options you can give to Clang to do that, but read on for a
 simpler way.

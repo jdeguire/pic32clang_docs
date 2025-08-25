@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'LLVM for PIC32'
+project = 'Clang4PIC32'
 copyright = '2025, Jesse DeGuire'
 author = 'Jesse DeGuire'
 

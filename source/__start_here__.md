@@ -3,17 +3,17 @@
 % Licensed using a BSD 3-clause license, see LICENSE at the root of this project.
 % Find this project on GitHub at https://github.com/jdeguire/pic32clang_docs.
 %
-% LLVM for PIC32 documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
+% Clang4PIC32 documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
 
-# LLVM for PIC32® Documentation
+# Clang4PIC32 Documentation
 
 ```{todo}
 Find a better theme and see if I can increase the width.
 ```
 
-Welcome! LLVM for PIC32® is a distribution of LLVM that includes all the support files you
-need to build baremetal projects for Microchip's PIC32C and SAM devices. It is, essentially, an
-alternative to Microchip's XC32 toolchain with a boring name.
+Welcome! Clang4PIC32 is a distribution of LLVM that includes all the support files you need to build
+baremetal projects for Microchip's 32-bit PIC® and SAM devices. It is, essentially, an alternative
+to Microchip's MPLAB® XC32 toolchain with a boring name.
 
 ```{note}
 As of this writing (August 2025), Pic32Clang supports only the PIC32C and SAM microcontrollers. I
@@ -40,7 +40,7 @@ compiling_and_linking.md
 ```
 
 ## A Note About Trademarks
-This LLVM for PIC32 project and my [supporting projects](#my-projects) make references to trademarked
+This Clang4PIC32 project and my [supporting projects](#my-projects) make references to trademarked
 names from Microchip Technology Inc., such as "PIC®", "MPLAB®", and non-trademarked names such as
 "PIC32", "SAM", and "XC32"[^1]. These names are all property of Microchip Technology Inc. These projects
 also make reference to trademarked names from Arm Limited, such as "Arm®", "Cortex®", and "Thumb®" and
@@ -48,7 +48,7 @@ non-trademarked names such as "CMSIS"[^2]. These names are all property of Arm L
 
 These projects are all independent efforts not affiliated with, endorsed, sponsored, or otherwise
 approved by Microchip Technology, Arm Limited, nor any of the contributors to any of the external
-projects used by LLVM for PIC32.
+projects used by Clang4PIC32.
 
 [^1]: Checked August 2025. See the Microchip Trademark Standards document for a list of trademarked names:
 <https://ww1.microchip.com/downloads/aemDocuments/documents/legal/Microchip-Trademark-Standards.pdf>.
@@ -61,10 +61,11 @@ Microchip's toolchains are supported by a large company with a team of highly-ex
 who have been working with their GCC-based toolchains for *years*. You get integration with Microchip's
 development environments and other software tools like MPLAB® Harmony. You get real support from a
 real support team. Finally, you will get support for new devices as they're released and support for
-more devices (LLVM for PIC32 will never support MIPS devices, for example). In other words, Microchip's
-official toolchains provide you with proper integration and a seamless out-of-the-box experience.
+more devices (Clang4PIC32 will never support 32-bit dsPIC® devices, for example). In other words, 
+Microchip's official toolchains provide you with proper integration and a seamless out-of-the-box
+experience.
 
-With LLVM for PIC32, you're getting...not those things. I am just some dude on the internet who had
+With Clang4PIC32, you're getting...not those things. I am just some dude on the internet who had
 apparently too much time on his hands. What you *do* get are the latest and greatest that LLVM and
 Clang have to offer. You get to use the `lld` linker, which is purported to offer much faster link
 times than GNU `ld` and it supports [ThinLTO](http:../share/doc/LLVM/clang/html/ThinLTO.html). You get
@@ -86,7 +87,7 @@ projects shall be held liable for any damages regardless of cause as a result of
 This section shows projects used in the making of this toolchain distribution and these documents.
 
 ### External Projects
-LLVM for PIC32 could not have happened without the efforts of the many people who made these projects
+Clang4PIC32 could not have happened without the efforts of the many people who made these projects
 happen. Many thanks to all the contributors to these projects, no matter how big or small!
 
 - LLVM Project  
