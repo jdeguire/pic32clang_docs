@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Pic32Clang'
+project = 'LLVM for PIC32'
 copyright = '2025, Jesse DeGuire'
 author = 'Jesse DeGuire'
 
@@ -14,7 +14,10 @@ author = 'Jesse DeGuire'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 master_doc = '__start_here__'
-extensions = ['myst_parser']
+extensions = ['myst_parser',
+              'sphinx.ext.todo']
+
+todo_include_todos = True
 
 templates_path = ['_templates']
 exclude_patterns = []

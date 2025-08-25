@@ -24,10 +24,28 @@ you to get packages from the system package manager rather than using `pip`.
 You also need the `myst-parser` package. Install that from `pip` or your system's package manager.
 
 ## Building the Docs
-To build the docs into a series of HTML files, simply run `make html' from this directory. On Windows,
+To build the docs into a series of HTML files, simply run `make html` from this directory. On Windows,
 the `make.bat` file should run. On other systems, GNU Make will be run and will use the `Makefile`
 in this directory.
+
+## Editing the Docs
+These documents are written using the MyST flavor of Markdown. Learn more at the official 
+[MyST website](https://myst-parser.readthedocs.io). If you use Visual Studio Code, the `MyST-Markdown`
+plugin is very handy.
+
+I still have a lot to learn about Markdown and MyST, so feel free to improve these documents!
 
 ## License
 See the LICENSE file for the full thing, but basically this is licensed using the BSD 3-clause
 license because I don't know anything about licenses and that one seemed good.
+
+## Trademarks
+This project and the similarly-named ones make references to "PIC32", "SAM", "XC32", and "MPLAB"
+products from Microchip Technology. Those names are trademarks or registered trademarks of Microchip
+Technology.
+
+These project also refer to "Arm", "ARM", "Cortex", and "CMSIS", which are all trademarks of Arm
+Limited.
+
+These projects are all independent efforts not affiliated with, endorsed, sponsored, or otherwise
+approved by Microchip Technology nor Arm Limited.
