@@ -5,6 +5,10 @@
 
 # Compiling and Linking
 
+```{todo}
+Add a few examples of compiling and linking.
+```
+
 Both compiling and linking your code are done through either the `clang` or `clang++` executables,
 depending on whether or not you are using C++. These documents will use "Clang" to refer to either
 of these executables.
@@ -17,7 +21,7 @@ clang++ -o hello.elf hello.cpp
 
 This should compile your C++ file, link it with the provided runtime libraries, and output an ELF file.
 What it will *actually* do is exit with an error. Clang thinks you want to build your code for x86
-processors because you didn't tell it otherwise. Clang4PIC32® does not include libraries for x86
+processors because you didn't tell it otherwise. This distribution does not include libraries for x86
 processors, so the link will fail. You therefore need to tell Clang about your device so it knows how
 to build your code. There are plenty of options you can give to Clang to do that, but read on for a
 simpler way.
@@ -133,6 +137,12 @@ Not all options need the above syntax. The below list of options will indicate w
 - **-\\-config=\<file\>**  
 This is the same option you pass to the compiler above. This contains a few options that get passed
 to the linker.
+- **-\\-defsym=\<symbol\>=\<value\>** (*-Wl*)  
+Use this to define symbols the linker uses when laying out the binary. In particular, you can use 
+`-Wl,--defsym=__HEAP_SIZE=0x4000` to allocate a heap. Notice there are no spaces surrouning the two 
+`=` in the option. There is a similar symbol `__STACK_SIZE` to ensure a minimum stack size, but it
+is optional. The stack is always allowed to use whatever main memory is not used by the heap and
+statically-allocated symbols. 
 - **-\\-gc-sections** (*-Wl*)  
 Remove any unused ELF file sections from the final binary. You generally use this with the compiler
 option `-ffunction-sections` to remove any functions that are not used from your output file to reduce

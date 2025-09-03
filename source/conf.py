@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Clang4PIC32'
+project = 'Clang For PIC32'
 copyright = '2025, Jesse DeGuire'
 author = 'Jesse DeGuire'
 
@@ -18,7 +18,7 @@ extensions = ['myst_parser',
               'sphinx.ext.todo']
 
 todo_include_todos = True
-
+myst_heading_anchors = 3
 templates_path = ['_templates']
 exclude_patterns = []
 
@@ -27,5 +27,10 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
+html_theme = 'classic'
+html_theme_options = {
+    'sidebarwidth': '250',
+    'body_max_width': '1000'
+}
+
 html_static_path = ['_static']
