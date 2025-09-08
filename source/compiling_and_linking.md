@@ -5,38 +5,109 @@
 
 # Compiling and Linking
 
-```{todo}
-Add a few examples of compiling and linking.
-```
-
 Both compiling and linking your code are done through either the `clang` or `clang++` executables,
-depending on whether or not you are using C++. These documents will use "Clang" to refer to either
-of these executables.
+depending on whether or not you are using C++. The main differences are whether sources are assumed
+to be C or C++ files by default and if the C++ standard library gets linked in. These executables are
+sometimes called "drivers" because they aren't the compiler themselves. Rather, they figure out what
+other tools to call--assembler, compiler, or linker--based on the options you give it. These documents
+will use "Clang" to refer to either of these executables.
+
+
+## Some Simple Examples
+This section will provide a few simple examples of how you can run Clang. These will not show you
+every option--there are a LOT of them--but this is enough to get you to understand the basic workflow.
+For any "real" project, you'd probably use a build system like [CMake](https://cmake.org),
+[Meson](https://mesonbuild.com/), or [SCons](https://scons.org/) to generate the right Clang calls
+for you.
 
 The absolute most basic command for building a simple `hello.cpp` app is the following.
 
 ```
-clang++ -o hello.elf hello.cpp
+clang++ hello.cpp
 ```
 
-This should compile your C++ file, link it with the provided runtime libraries, and output an ELF file.
-What it will *actually* do is exit with an error. Clang thinks you want to build your code for x86
-processors because you didn't tell it otherwise. This distribution does not include libraries for x86
-processors, so the link will fail. You therefore need to tell Clang about your device so it knows how
-to build your code. There are plenty of options you can give to Clang to do that, but read on for a
-simpler way.
+This will compile your file assuming it is C++, link it, and output an executable called `a.out`. You
+probably want to call it something else, so you can add the **-o** option to make that happen. Note
+that options ARE case-sensitive. In fact, **-O** is used to specify an optimization level. You can
+have a look at the list of compiler options below to see more info about this option. This next
+example will use both of these options together.
+
+```
+clang++ -O2 -o hello.elf hello.cpp
+```
+
+Most options do not care where on the command line they go. Options always start with either `-` or
+`--`. Anything that does not is assumed to be either an argument to the previous option or a source
+file. Source files are usually specified last, though. You can specify multiple files on the command
+line to have them all built together. This is useful for small projects with only a few files that you
+want to compile and link together in one go.
+
+```
+clang++ -O1 -o hello.elf hello.cpp foo.cpp bar.cpp
+```
+
+In most projects, you'll want to separate the compile and link steps. You'll have multiple files that
+you will want to compile into object files and then you'll want to link the object files into your
+final executable. You tell Clang to just compile by using the **-c** option. When you do that, you
+will want to use the **-o** option to provide a useful name for your object file. By convention, this
+will be the name of your source file, but with `.o` or `.obj` as the extension. You then will
+call Clang like normal with your object files to link them together.
+
+```
+# Build three sources files into object files.
+clang++ -O1 -o hello.o hello.cpp
+clang++ -O1 -o foo.o foo.cpp
+clang++ -O1 -o bar.o bar.cpp
+# Now link them.
+clang++ -o hello.elf hello.o foo.o bar.o
+```
+
+You can also tell the linker to link in external libraries. By convention, static libraries on Unix
+and baremetal systems always start with `lib` and end in `.a`. You can use the **-l** option to
+the linker to link in a static library that follows those conventions. For example, C math functions
+are often in their own library called `libm.a`. To be sure you link those in, then you would do the
+following. Notice that you need only the base name of the library without the `lib` or `.a`. 
+
+```
+clang++ -o hello.elf -lm hello.o foo.o bar.o
+```
+
+The **-l** option is one in which its placement does matter. The order in which items are linked and
+thus will appear in your final executable depend on the order of the **-l** options and object files.
+You can put the **-l** option after your object files if you like. You can use this option multiple
+times to link multiple libraries.
+
+Sometimes you need to define a macro that applies to whatever source files you are compiling. Use
+the **-D** option to do that. This next example will show two forms of this option: one without a
+macro value and one that defines a macro with a value. In the latter, you should not include spaces
+around the `=`. You can use this option multiple times to define multiple macros.
+
+```
+clang++ -DBLEH -DBLOO=42 -o hello.o hello.cpp
+```
+
+Likewise, you can provide the linker with symbols it might need while linking. The main reason you
+would do this is to tell the linker to allocate space for a heap. To do that you need to give the
+linker the `__HEAP_SIZE` symbol with the value being the size of the heap you want. Linker options
+are a little weird in that sometimes you need bundle them with the **-Wl** option to tell Clang that
+the option is meant for the linker. Have a look at the linker options below for more info about this.
+You can use this option multiple times to define multiple linker symbols.
+
+```
+clang++ -Wl,--defsym=__HEAP_SIZE=0x4000 -o hello.elf hello.o foo.o bar.o -lm
+```
 
 
 ## Device Config Files
 Clang needs to know about your device to generate the proper code for it. That would be things like
 the target architecture, if the device has an FPU, how to find startup code, and stuff like that. To
 handle this, this distribution is bundled with premade configuration files for every supported device.
-All you have to do is tell Clang which configuration file to use with the `--config=<devname>.cfg`
+All you have to do is tell Clang which configuration file to use with the `--config <devname>.cfg`
 option. For example, if you wanted to build your `hello.cpp` app for a PIC32CZ8110CA80208, then you
 would run the following.
 
 ```
-clang++ --config=pic32cz8110ca80208.cfg -o hello.elf hello.cpp
+clang++ --config pic32cz8110ca80208.cfg -o hello.elf hello.cpp
 ```
 
 Notice that the configuration file name is in lower-case. Also notice that you include the "pic" for
@@ -44,13 +115,18 @@ devices that start with "PIC32". If you have a device whose name starts with "AT
 drop the "AT". For example, to build for the ATSAMD10C13A, you would do the following.
 
 ```
-clang++ --config=samd10c13a.cfg -o hello.elf hello.cpp
+clang++ --config samd10c13a.cfg -o hello.elf hello.cpp
 ```
 
 ```{caution}
 Be sure to pass the same config file every time you run Clang for your device. You'll probably get
 unexpected results if you, for example, compile with one device config and link with another.
 ```
+
+These config files use options that are not discussed here. If you want to see what those are, you
+can find the configuration files in the `config/` subdirectory of the toolchain location. This version
+of Clang is built to look in there by default for the config files. If you want to use your own
+configuration files, see the Clang docs on configuration files [here](llvm:clang/html/UsersManual.html#configuration-files).
 
 
 ## A Few Useful Compile-time Options
@@ -97,6 +173,7 @@ can be one of the following. You can omit the level to get level 1.
   - **2**: Optimize more. This provides better performance at the cost of debugability.
   - **3**: Optmize even more. This will certainly make debugging difficult and may increase the size
   of your final binary.
+  - **g**: This is equivalent to level 1, but is here for compatibility with GCC.
   - **s**: Optimize for size. This is sort of like level 2 but will also try to reduce code size.
   - **z**: Optimize more for size. This will do what it can to minimizie code size.
 - **-o \<file\>**  
@@ -115,7 +192,7 @@ this option to override that. The value of `<lang>` can be `c` for C, `c++` for 
 assembly language, or `assembler-with-cpp` for assembly language files that need the C preprocessor.
 
 All options start with either `-` or `--`. Clang will assume that command line arguments that do not
-are files to be built.
+are files to be built or arguments to previous options.
 
 
 ## A Few Useful Link-time Options
@@ -141,8 +218,8 @@ to the linker.
 Use this to define symbols the linker uses when laying out the binary. In particular, you can use 
 `-Wl,--defsym=__HEAP_SIZE=0x4000` to allocate a heap. Notice there are no spaces surrouning the two 
 `=` in the option. There is a similar symbol `__STACK_SIZE` to ensure a minimum stack size, but it
-is optional. The stack is always allowed to use whatever main memory is not used by the heap and
-statically-allocated symbols. 
+is optional. The stack will always use whatever memory is left over after everything else has been
+allocted. 
 - **-\\-gc-sections** (*-Wl*)  
 Remove any unused ELF file sections from the final binary. You generally use this with the compiler
 option `-ffunction-sections` to remove any functions that are not used from your output file to reduce
@@ -170,5 +247,4 @@ library. As you can see from the options above, you would simply add `-lm` to yo
 ```
 
 All options start with either `-` or `--`. Clang will assume that command line arguments that do not
-are files to be linked. The linker can take object files, which usually end in `.o`, or static libraries,
-which usually end in `.a`.
+are files to be linked or arguments to previous options.

@@ -3,9 +3,9 @@
 % Licensed using a BSD 3-clause license, see LICENSE at the root of this project.
 % Find this project on GitHub at https://github.com/jdeguire/pic32clang_docs.
 %
-% Clang For PIC32 documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
+% LLVM For PIC32 documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
 
-# Clang For PIC32 Documentation
+# LLVM For PIC32 Documentation
 
 ```{todo}
 Find a better theme and see if I can increase the width.
@@ -13,8 +13,8 @@ Find a better theme and see if I can increase the width.
 
 Welcome! This is a distribution of Clang and LLVM that includes all the support files you need to
 build baremetal projects for Microchip's 32-bit PIC® and SAM devices. You can use this an as
-alternative to Microchip's MPLAB® XC32 compiler, but see the [Disclaimer](#disclaimer) below to see
-if this is right for you.
+alternative to Microchip's MPLAB® XC32 compiler, but see the [](#disclaimer) below to see if this is
+right for you.
 
 These documents are not intended to make you an expert in using Clang or LLVM, but they will cover
 some basics. You will want to have at least a little bit of experience running Clang or GCC (Clang is
@@ -31,35 +31,37 @@ Add links here or below for the LLVM and Clang docs.
 :caption: Contents:
 
 compiling_and_linking.md
+other_tools.md
+using_device_features.md
 ```
 
 ## Supported Devices
 This distribution contains files to support Microchip's PIC32C and SAM series of Cortex®-M microcontrollers.
 I plan to support the SAM MPU devices in the future, but I'm not yet familiar enough with them to do that.
-I do not plan to support the MIPS PIC32M devices because the MIPS architecture is basically dead. This will
-also likely never support the dsPIC33AK series of 32-bit dsPIC® devices because those use a proprietary
-architecture that is not supported by LLVM.
+This will likely not support Microchip's MIPS devices. As of this writing in September 2025, there is no
+MIPS target maintainer in LLVM and MIPS itself is no longer actively developed. This will also likely
+never support the dsPIC33AK series of 32-bit dsPIC® devices because those use a proprietary architecture
+that is not supported by LLVM.
 
 
 ## This Project's Name
 As of this writing in September 2025, I don't really have a name for this project. I generally refer to
-it as "clang", "LLVM", or "my build of" one of those two. The projects I used to create this distribution
-(see [My Projects](#my-projects) below) use "Pic32Clang", but that's just shorthand for "this distribution
-that works for the PIC32 and SAM devices" and not really its name. Some C preprocessor macros also use
-"pic32" in their names to help differentiate them from macros built into Clang.
+it as "clang", "LLVM", or "my build of" one of those two. I have used "Pic32Clang" in various places as
+shorthand for "this distribution that works for the PIC32 and SAM devices". However, that cannot be the
+official name because it has "PIC" in the name and that is a trademark of Microchip. Some C preprocessor
+macros also use "pic32" or "PIC32" in their names. Those are for technical reasons, like to provide
+information about the device you are building for, and not for branding.
 
-I am open to suggestions for a name. I want to avoid offcially calling it something with "PIC" in it
-because maybe one day this will expand beyond Microchip devices. Who knows! Also, I probably ought to
-avoid using someone else's trademarked name in my own project's name.
+I am open to suggestions.
 
 
 ## Trademark Stuff
 Speaking of trademarks, here are the usual trademark notices for names used in these projects.
 
-This distribution project and my [supporting projects](#my-projects) make references to trademarked
-names from Microchip Technology Inc., such as "PIC®", "MPLAB®", and non-trademarked names such as
-"PIC32", "SAM", and "XC32"[^1]. These names are all property of Microchip Technology Inc. These projects
-also make reference to trademarked names from Arm Limited, such as "Arm®", "Cortex®", and "Thumb®" and
+This distribution project and my [](#my-projects) make references to trademarked names from Microchip
+Technology Inc., such as "PIC®", "MPLAB®", and non-trademarked names such as "PIC32", "SAM", and
+"XC32"[^1]. These names are all property of Microchip Technology Inc. These projects also make
+reference to trademarked names from Arm Limited, such as "Arm®", "Cortex®", and "Thumb®" and
 non-trademarked names such as "CMSIS"[^2]. These names are all property of Arm Limited.
 
 These projects are all independent efforts not affiliated with, endorsed, sponsored, or otherwise
