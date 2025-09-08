@@ -59,7 +59,7 @@ then you can use this snippet to select the correct file.
 #ifdef __clang__
 #  include <which_pic32.h>
 #else
-#  incluce <xc.h>
+#  include <xc.h>
 #endif
 ```
 
