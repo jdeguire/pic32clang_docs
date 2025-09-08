@@ -51,8 +51,8 @@ html_theme_options = {
     'body_max_width': '1000'
 }
 
-# To link to external documents, we have to tell Sphinx how to find them. Otherwise, it will try to
-# look relative to the source file, which isn't what we want. Sphinx handles http, https, mailto, and
+# To link to external documents, we have to tell MyST how to find them. Otherwise, it will try to
+# look relative to the source file, which isn't what we want. MyST handles http, https, mailto, and
 # ftp by default, but if we want custom ones we need to specify them here. For example, in the document
 # we could put 
 # 

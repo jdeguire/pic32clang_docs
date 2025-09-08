@@ -3,6 +3,12 @@
 % Licensed using a BSD 3-clause license, see LICENSE at the root of this project.
 % Find this project on GitHub at https://github.com/jdeguire/pic32clang_docs.
 
+```{todo}
+Split this chapter up into different sections. Maybe one for accessing peripherals, another for
+config registers, another for interrupts, another for built-in macros (ACLE, __clang__, and PIC32
+macros), and fifth for built-in functions (CMSIS).
+```
+
 # Using Device Features
 
 This chapter will provide examples showing how to access device-specific features like peripheral
@@ -125,18 +131,29 @@ In other words, if a number is present (CAN**0**) then this is an *instance*; ot
 so the instance and peripheral names will be the same.
 
 ### Base Address Macros
-All peripherals have macros you can use to get its base address. Each instance of each peripheral has
-its own macro. The format of these macros is `{instance}_REGS_BASE`. For example, if you
-wanted the base address of SERCOM0, you would use `SERCOM0_REGS_BASE`{l=c}. For TCC4, you would use
-`TCC4_REGS_BASE`{l=c}. These macros evaluate to the absolute address of the start of the peripheral's
-registers as an `unsigned long`{l=c}.
+All instances have macros you can use to get their base addresses. The format of these macros is
+`{instance}_REGS_BASE`. Here are a couple of examples. 
+
+```c
+// The base address of the SERCOM0 registers.
+SERCOM0_REGS_BASE
+// The base address of the TCC4 registers.
+TCC4_REGS_BASE
+```
+These macros evaluate to the absolute address of the start of the peripheral's registers as an
+`unsigned long`.
 
 To access a specific register within a peripheral, you can get its offset from the base address with
-a macro of the form `{peripheral}_{register}_OFFSET`. So, if you wanted the address of the `TOCV`
-register of the CAN1 instance, you would use `CAN1_REGS_BASE + CAN_TOCV_OFFSET`{l=c}. Notice that the
-offset macro uses the *peripheral* name "CAN" and not the *instance* name "CAN1". This is because
-the registers are the same for each instance of a peripheral and so having each perpiheral-specific
-macro use the instance would just be redundant.
+a macro of the form `{peripheral}_{register}_OFFSET`. If you wanted the address of the `TOCV`
+register of the CAN1 instance, you would use 
+
+```c
+CAN1_REGS_BASE + CAN_TOCV_OFFSET
+```
+
+Notice that the offset macro uses the *peripheral* name "CAN" and not the *instance* name "CAN1".
+This is because the registers are the same for each instance of a peripheral and so having each
+perpiheral-specific macro use the instance would just be redundant.
 
 Macros are always in upper-case, which is a common convention in C programming. These macros can be
 used in assembly along with C and C++. If your assembly file ends in a capital `.S`, then Clang will
@@ -151,32 +168,44 @@ These macros can be used in assembly along with C and C++.
 
 ### Peripheral Structs/Unions (C/C++ Only)
 Another way to access device registers is to use macros that present the peripheral registers as a
-C struct you can reference. The macros are formatted as `{instance}_REGS` and evaluate to 
-`((volatile {peripheral}_registers_t *){instance_REGS_BASE)`{l=c}. The type name here is all lower-case
-and is provided by the periphal-specific headers included by the device-specific headers. The structs
-mimic the layout of the instance's registers in memory. You can think of these macros as "overlaying"
-the struct on top of the memeory locations the instance's registers occupy.
+C struct or union you can reference. The name of the type is `{peripheral}_registers_t` in all
+lower-case. The type definitions are provided by peripheral-specific header files. The macros are 
+formatted as `{instance}_REGS` and evaluate to a `volatile` pointer to the peripheral type located
+at the instance's base address. The data types mimic the layout of the instance's registers in memory.
+You can think of these macros as "overlaying" the struct on top of the memeory locations the instance's
+registers occupy.
 
-For most peripherals, the members of the struct correspond to the registers in the device. The format
-is `{peripheral}_{register}`. For example, if you wanted to access the `SYNCBUSY` register in the
-TCC5 instance, then you would use `TCC5_REGS->TCC_SYNCBUSY`{l=c}. It does seem redundant to have the
-peripheral name present in the register name, but this was done to maintain some compatibility with
-Microchip's XC32 toolchain.
+For most peripherals, the type is a struct whose members correspond to the registers in the device.
+The format is `{peripheral}_{register}`. For example, if you wanted to wait for the `SYNCBUSY` register
+in the TCC5 instance to clear, then you would use 
+
+```c
+while(TCC5_REGS->TCC_SYNCBUSY)
+{ 
+    /* Wait for sync to complete */
+}
+```
+
+It does seem redundant to have the peripheral name present in the register name, but this was done
+to maintain some compatibility with Microchip's XC32 toolchain.
 
 These struct macros can be used only in C and C++.
 
 (peripheral-modes)=
 #### Peripheral Modes
-Some peripherals can operate in different "modes". The main examples are the SERCOM and FLEXCOM
-peripherals. These can act as a I2C Master or Slave, a SPI Master or Slave, or a USART. FLEXCOM uses
-the term "TWI" instead of "I2C" for some reason.
+Some peripherals can operate in different "modes". A common example is the SERCOM peripheral, which
+can act as a I2C Master or Slave, a SPI Master or Slave, or a USART.
 
 In periphreals with modes, the peripheral type is a union rather than a struct. Its members refer to
 the possible modes the peripheral can be in. Those members are themselves structs that contain the
 registers. All registers here are accessed through a mode even if the register is not specific to a
 particular mode. For example, to access the `STATUS` register in SERCOM8, you need to decide the mode
-you intend to use the instance in first. If you want to use it in SPI Master mode, then you could access
-the register with `SERCOM8_REGS->SPIM.SERCOM_STATUS`{l=c}.
+you intend to use the instance in first. If you want to use it in SPI Master mode, then you could
+access the register with 
+
+```c
+uint32_t status = SERCOM8_REGS->SPIM.SERCOM_STATUS;
+```
 
 #### Register Groups
 Some peripherals will groups sets of registers together because the peripheral is used to handle a
@@ -184,16 +213,27 @@ set of subperipherals. For example, a DMA peripheral might have some registers t
 module as a whole, but then have register groups to control DMA channels independently.
 
 Cases like these are sort of a cross of the normal case and the above "modes" case. Registers that
-control the peripheral as a whole are accessed like normal. For example, the `CTRLA` register is a
-member of the overall DMA peripheral rather than existing per-channel, so you would access it with
-`DMA_REGS->DMA_CTRLA`{l=c}. On the other hand, each DMA channel has its own register to store a DMA
-start address, `CHSSA`. If you wanted to access the start address for channel 2, then you would use
-`DMA_REGS->CHANNEL[2].DMA_CHSSA`{l=c}.
+control the peripheral as a whole are accessed like normal. Registers that control peripheral channels
+or subperipherals are accessed through a group. Here are a couple of examples using the DMA
+peripheral. The `CTRLA` register is a member of the overall DMA peripheral rather than existing
+per-channel. Each channel, however, has its own transfer start address set by its `CHSSA` register.
+
+
+```c
+// CTRLA applies to the DMA peripheral as a whole.
+DMA_REGS->DMA_CTRLA |= 0x01;
+// Set the transfer start address for channel 2. Each channel has its own CHSSA.
+DMA_REGS->CHANNEL[2].DMA_CHSSA = start_addr;
+```
 
 As a special case for this special case, some devices have a single PORT peripheral with no registers
 at the top level and all of under groups. Each group corresponds to a port letter. So group 0 is for
-the `PAx` pins, group 1 for the `PBx` pins, and so on. To toggle a `PDx` pin with the `OUTTGL` register,
-you would use `PORT_REGS->GROUP[3].PORT_OUTTGL`{l=c}.
+the `PAx` pins, group 1 for the `PBx` pins, and so on. To toggle `PDx` pins with the `OUTTGL` register,
+you would use 
+
+```c
+PORT_REGS->GROUP[3].PORT_OUTTGL = 0xA5;
+```
 
 #### DMA Descriptor Structs
 Peripherals that can access memory, such as the DMA or SQI peripherals, provide additional structs
@@ -303,8 +343,8 @@ on its own.
 #define ADC_FLTCTRL_OVRSAM_128_SAMPLES          (ADC_FLTCTRL_OVRSAM_128_SAMPLES_Val << ADC_FLTCTRL_OVRSAM_Pos)
 ```
 
-In most cases, it is probably easier to use the second set. Here are a couple of examples to show how
-you could use these.
+In most cases, it is probably easier to use the second set. Here is an example to show how you could
+use these.
 
 ```c
 // First clear CTRLA.MODE to remove the old value.
@@ -426,6 +466,9 @@ room on this page to use the above macros, so here is another example that sets 
 .section .fuses_usercfg1_fseq
     .word FUSES_FSEQ_SEQNUM(0x01) | FUSES_FSEQ_SEQBAR(0xFFFE)
 ```
+
+Your assembly source file needs to use the C preprocessor. Clang will do that for you if you give
+your file a capital "S" extension (`.S`).
 
 
 ## Special and Control Registers
