@@ -472,12 +472,188 @@ your file a capital "S" extension (`.S`).
 
 
 ## Special and Control Registers
-TODO
-Things you would access using CMSIS function or macros.
+CMSIS provides its own set of types and macros for accessing core peripherals on M-profile devices.
+These peripherals include the SysTick interval timer, the Memory Protection Unit, and FPU control
+registers. These core peripherals are accessed similarly to device peripherals as described above.
+To learn more about the core peripherals your device has, you should look through the ARM Technical
+Reference Manual for the CPU in your device. For example, a PIC32CZ CA80 has a Cortex-M7 CPU and so
+you would want the Cortex-M7 Technical Reference Manual. That in turn may point you to other documentation,
+such as an Architecture Reference Manual based on the CPUs architecture (such as ARMv7-M).
+
+If you want to dig around, you can look inside the `CMSIS/Core/Include` found in the toolchain install
+location. There you will find header files for supported CPUs that contain the types and macros for
+the different peripherals. The appropriate header is already included in the device-specific header
+file, so you do not have to do that.
+
+You can also consult the online CMSIS documentation for more info. This link will go to a page that
+describes how to access core peripheral registers in code: <https://arm-software.github.io/CMSIS_6/latest/Core/regMap_pg.html>.
+
+```{important}
+Remember that CMSIS supports only Cortex-M devices and Cortex-A devices that use ARMv7-A. You are
+currently on your own for accessing registers and peripherals on older devices, but a future version
+of this distribution may add CMSIS-like functionality.
+```
 
 
 ## Interrupts (ARM MCUs)
-TODO
+The ARM MCU (Cortex-M) devices provide special handling of interrupts and faults that require less
+work from us as developers.
+
+```{note}
+Interrupts and faults are both classes of hardware exceptions, so you may see "exception" used to
+refer to either of those. To avoid confusion with the C++ error handling mechanism of the same names,
+this document will mainly use "interrupts" to refer to these events.
+```
+
+Whenever an interrupt or fault handler is entered, the CPU automatically puts registers R0-R3, R12,
+and R14 (LR) on the stack and updates the stack pointer. It also stacks the address to which the
+interrupt will return (ie. the value of the program counter when the interrupt occurred) and the
+program status register `xPSR`. LR will then contain a special sentinel value that tells the CPU to
+unstack those value to return from an interrupt. The CPU can even handle FPU registers by allocating
+stack space for them and lazily stacking the FPU registers only if the FPU is used in the interrupt.
+This means that an interrupt or fault handler can look just like a normal C function without extra
+compiler-specific attributes. The M-Profile devices do not have a "return from interrupt" instruction
+because the special LR value handles that.
+
+You can read more about how this works in the Technical Reference Manual for your CPU, but this section
+will focus on how to add handlers to your code.
+
+If you want to globally enable or disable interrupts, you can use the `__enable_irq()` and `__disable_irq()`
+functions to do this.
+
+### Interrupt Vectors
+Each device-specific header file contains an enum typedef called `IRQn_Type`. Each member's name is
+formatted as `{irq_name}_IRQn`. Each member's value is its interrupt request number. Numbers less than
+0 are reserved for CPU interrupts: the reset interrupt, fault handlers, the SysTick handler, and so on.
+Zero and positive numbers are for device-specific peripherals or instances.
+
+You will need to figure out the name of the interrupt you want to configure. The peripheral documentation
+in your device's datasheet can be helpful--look for a section titled "Interrupts" or "Nested Vectored
+Interrupt Controller"--though sometimes you just have to take a look at the enum yourself. This is
+particularly true for peripherals or instances that have multiple interrupt vectors. The CPU vector
+names can be found in the Architecture Reference Manual for your device.
+
+Once you have your name, you can configure the interrupt using some function provided by CMSIS. The
+CMSIS functions you want to use are prefixed with `NVIC_`. This will describe only a few of them;
+the CMSIS code and docs can show you more. You can control whether or not your interrupt is enabled
+with `NVIC_EnableIRQ(IRQn_Type irq)` and `NVIC_DisableIRQ(IRQn_Type irq)`. To clear the "pending" flag
+for an interrupt, use `NVIC_ClearPendingIRQ(IRQn_Type irq)`. You normally do NOT need to do this in
+your handler, but it is good practice to clear the pending flag when you are first setting up an
+interrupt so that you do not unexpectedly enter your handler. Finally, to set the priority level for
+your interrupt, use `NVIC_SetPriority(IRQn_Type irq, uint32_t prio)`. For ARM devices, *lower* numbers
+mean *higher* priority, so 0 is the highest priority you can use. The lowest priority is configurable
+by whoever made your device. The device-specific headers have the `__NVIC_PRIO_BITS` macro to tell you
+how many bits the priority can use. For example, if `__NVIC_PRIO_BITS` is 3 then the lowest priority
+level is 7.
+
+Here is an example of setting up the NVIC for your interrupt. Suppose you want to configure an interrupt
+for receiving UART data on SERCOM4. After some digging in the datasheet for your device and the device
+header file, suppose that the IRQ you want to configure is called `SERCOM4_2` (names like these are
+unfortunately real and why you have to do some digging). You can configure the interrupt controller
+using the following.
+
+```c
+// Clear and enable the global SERCOM4_2 interrupt. We found in the datasheet that SERCOMx_2
+// is the "Rx Complete" interrupt. This is used on the PIC32CZ CA80.
+NVIC_ClearPendingIRQ(SERCOM4_2_IRQn);
+NVIC_SetPriority(SERCOM4_2_IRQn, 5);        // Remember that higher numbers are lower priority.
+NVIC_EnableIRQ(SERCOM4_2_IRQn);
+```
+
+Chances are that you will also need to access the peripheral instance registers to perform additional
+setup to make the interrupt you want work. Refer to the peripheral documentation in the device datasheet
+for more info on that.
+
+### Interrupt Handlers
+You probably noticed that nowhere in the above section did we tell the interrupt controller how to
+handle our interrupt. We need to provide a handler function that is referenced by the interrupt
+controller's IVT, or interrupt vector table. The vector table is defined in the device's startup
+code that gets linked in when you build an app. If you want to see what that is like, you can find
+the startup code (and linker script) for you device in the toolchain install location under 
+`arm/proc/{procname}`.
+
+By default, most interrupts will jump to a dummy handler that spins in a while loop forever. To
+provide your own handler, simply define a function in your application with the signature
+`void {irq_name}_Handler(void)`. This uses the same name that is used in the `IRQn_Type` enum described
+above. If you define the function in a C++ file, you **must** declare your interrupt handler as `extern "C"`.
+You do not need to call `NVIC_ClearPendingIRQ()` in your handler, but you may need to clear interrupt
+flags set in the peripheral registers for whichever instance you are providing a handler for.
+
+We can continue our SERCOM4 example from above by providing a handler for our Rx Complete interrupt.
+
+```c++
+// Remember to include this extern "C" if this is in a C++ file!
+extern "C" void SERCOM4_2_Handler(void)
+{
+    // We do not need to clear the flag in the NVIC, but this SERCOM peripheral does have its own
+    // flags to clear. The PIC32CZ this example is based on has a quirk that requires us to clear
+    // the flags then read them back. Check the datasheet for your device to see what you need to do.
+    OUR_SERCOM_REGS->USART_INT.SERCOM_INTFLAG = SERCOM_USART_INT_INTFLAG_RXC_Msk;
+    OUR_SERCOM_REGS->USART_INT.SERCOM_INTFLAG;
+
+    ReceiveTheData();
+}
+```
+
+The startup code is set up so that any handler you provide will override any handler it provides,
+so defining the function is all you have to do.
+
+One handler you will certainly want in your application is the HardFault handler. This is the last
+stop for catching faults before the CPU locks up and has to be reset. You can use it as a "catch-all"
+handler or you can provide handlers for the other faults as well. Those are `MemoryManagement`, 
+`UsageFault`, and `BusFault` handlers.
+
+```c++
+// Remember to include this extern "C" if this is in a C++ file!
+extern "C" void HardFault_Handler(void)
+{
+    // Here are some system registers you can use to get more info about the fault that brought you
+    // here. See the Architecture Reference Manual for your device for more info on these.
+    uint32_t cfsr  = SCB->CFSR;         // Configurable Fault Status Register
+    uint32_t hfsr  = SCB->HFSR;         // Hard Fault Status Register 
+    uint32_t mmfar = SCB->MMFAR;        // MemoryMagagement Fault Address Register
+    uint32_t bfar  = SCB->BFAR;         // BusFault Address Register
+
+#ifdef __DEBUG
+    __BKPT();                           // breakpoint instruction
+#endif
+
+    while(1)
+    {}
+}
+```
+
+Finally, you may find, after a bunch of debugging, that your processor is ending up in the default
+interrupt handler for some reason. This can be a pain to figure out because simply overriding
+`Default_Handler()` does not have an effect.
+
+```{note}
+I'm not actually sure why that is. I *think* it has something to do with the other interrupt handlers
+aliasing the default one unless you provide your own, but I'm not certain.
+```
+
+As a workaround, the default handler has a hook to let you provide your own processing. You can use
+this to figure out what interrupt just triggered and is using default handler. To do this, create a
+function in your code with signature `int _on_default_handler(void)`. Like the other handlers, you
+**must** declare this as `extern "C"` if you define it in a C++ file. If you want the default handler
+to return so that execution continues, have your function return a non-zero value. Otherwise, the
+default handler will spin in a while loop forever. You could also have your function reset the device.
+
+```c++
+// Remember to include this extern "C" if this is in a C++ file!
+extern "C" int _on_default_handler(void)
+{
+    // Use the SCB->ICSR register to see what interrupt triggered to bring you here. This is slightly
+    // different on some devices, like ones based on the Cortex-M0+. Subtract 16 to get this to match
+    // the values in the IRQn_Type enum.
+    int32_t active_irq = (int32_t)_FLD2VAL(SCB_ICSR_VECTACTIVE, SCB->ICSR) - 16;
+
+    /* Do something with this info. */
+
+    return 1;       // Have the Default_Handler return instead of looping forver.
+}
+```
+
 
 
 ## Interrupts (ARM MPUs)
