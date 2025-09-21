@@ -10,6 +10,7 @@
 project = 'LLVM For PIC32'
 copyright = '2025, Jesse DeGuire'
 author = 'Jesse DeGuire'
+doc_version = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -27,13 +28,20 @@ extensions = ['myst_parser',
               'sphinx.ext.todo']
 
 # MyST has its own extensions, which we can enable here.
-myst_enable_extensions = ['attrs_inline']
+myst_enable_extensions = ['attrs_inline',
+                          'substitution']
 
 # Yes, we want to see the "TODO" admonitions in the output.
 todo_include_todos = True
 
 # Automatically create references we can link to for headings up to 3 levels deep.
 myst_heading_anchors = 3
+
+# With the 'substitution' extension enabled for MyST, we can add variables here to use in our
+# document. Do this using the {{var_name}} syntax.
+myst_substitutions = {
+    'version': doc_version
+}
 
 # Default stuff.
 templates_path = ['_templates']

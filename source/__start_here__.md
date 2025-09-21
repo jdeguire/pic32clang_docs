@@ -6,6 +6,7 @@
 % LLVM For PIC32 documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
 
 # LLVM For PIC32 Documentation
+*Docs version {{version}}*
 
 ```{todo}
 Find a better theme and see if I can increase the width.

@@ -588,8 +588,8 @@ extern "C" void SERCOM4_2_Handler(void)
     // We do not need to clear the flag in the NVIC, but this SERCOM peripheral does have its own
     // flags to clear. The PIC32CZ this example is based on has a quirk that requires us to clear
     // the flags then read them back. Check the datasheet for your device to see what you need to do.
-    OUR_SERCOM_REGS->USART_INT.SERCOM_INTFLAG = SERCOM_USART_INT_INTFLAG_RXC_Msk;
-    OUR_SERCOM_REGS->USART_INT.SERCOM_INTFLAG;
+    SERCOM4_REGS->USART_INT.SERCOM_INTFLAG = SERCOM_USART_INT_INTFLAG_RXC_Msk;
+    SERCOM4_REGS->USART_INT.SERCOM_INTFLAG;
 
     ReceiveTheData();
 }
