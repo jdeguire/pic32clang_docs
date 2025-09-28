@@ -22,7 +22,7 @@ to using macros to form the addresses you need to access registers and stuff lik
 
 ## A Word of Caution
 The datasheet can help you determine how to access device features, but you might need to do a bit
-of device header devling on occasion. In my experience, you will have a pretty easy time mapping things
+of device header delving on occasion. In my experience, you will have a pretty easy time mapping things
 like register and bitfield names in the datasheet into the correct names in code. Interrupt vector
 names, however, do not always match what the documentation for the peripheral says. This limitation
 applies to Microchip's own toolchains as well, but it is worth mentioning here.
@@ -31,8 +31,8 @@ The device-specific header files are located in the toolchain install location u
 subdirectory. When you supply Clang with a device-specific config file, it tells Clang to look for
 headers in this directory. If you have a text editor or IDE that can query the compiler for its include
 directories, like Visual Studio Code, then you should provide it with the `--config` option you supply
-to Clang. That way, any auto-complete features the editor has can help you fill in the register or
-interrupt names you need.
+to Clang (see [here](compiling_and_linking.md#device-config-files). That way, any auto-complete features
+the editor has can help you fill in the register or interrupt names you need.
 
 ```{admonition} Implementation Detail
 :class: note
@@ -82,6 +82,12 @@ from the device-specific header files so you do not have to do this manually. Th
 include some CMSIS routines where applicable, but you should check out the official Arm CMSIS website
 if you want the complete documentation. You can find more info at <https://www.arm.com/technologies/cmsis>.
 
+CMSIS does not support Arm products that predate the Cortex branding, so this distribution provides
+a small set of CMSIS-like functionality you can use. It is intended to support ARMv4 through ARMv6
+devices, but most testing was done using the ARM926EJ-S (ARMv5TE). Like CMSIS, this will be included
+from device-specific header files for appropriate devices. You will still want to consult documentation
+for your CPU to figure out which features apply to your device.
+
 Arm provides additional libraries under the CMSIS umbrella, such as CMSIS-NN for neural network math
 or CMSIS-DAP for using their Debug Access Protocol. This additional libraries are NOT provided with
 this distribution.
@@ -89,12 +95,6 @@ this distribution.
 CMSIS also has examples for how to create device-specific files, like headers, linker scripts, and
 startup code. This distribution used those examples to create the device-specific files included
 with it.
-
-```{important}
-CMSIS does not support Arm products that predate the Cortex branding. In particular, it does not have
-any code to handle ARM11™ or older devices. In those cases, you are currently on your own. A future
-version of this distribution may be able to provide a few useful CMSIS-like functions for you to use.
-```
 
 
 ## ACLE
@@ -245,8 +245,8 @@ uses descriptors to read and write packet data, but no structures are provided f
 ### Array Access to Peripheral Instances
 The instance macros above work if you want to hardcode the peripheral to access at compile time.
 However, it may be useful to be able to access peripheral instances from an array. This is handy for
-writing reusable code such as for a C++ class. In such a case, you could supply the instance number
-through the class's constructor.
+writing reusable code such as for a C++ class. In such a case, you might want to supply the instance
+number through the class's constructor.
 
 The device-specific files provide a set of static variables to access peripheral instances through
 arrays. The names of the arrays are formatted as `{peripheral}n_REGS`. Each array will have at least
@@ -261,6 +261,10 @@ void EnableTcc(uint32_t which)
     }
 }
 ```
+
+This feature is NOT present in Microchip's XC32 and so you should not use it if you want to maintain
+some compatibility with their toolchain.
+
 
 ### Register Field Macros
 Now that you can access device registers, you can use additional macros to access the fields within
@@ -277,7 +281,7 @@ and one of the underscores.
 
 These field macros can be used in assembly along with C and C++.
 
-This is a lot to take in, so here are a couple examples take directly from some peripheral headers.
+This is a lot to take in, so here are a couple of examples taken directly from some peripheral headers.
 First, here are the macros available for the `TXSPACE` field in the `FIFOSPACE` SERCOM register.
 Since SERCOM has different operating modes, these macros will reflect that. Here the mode is `I2CM`
 for I2C Master.
@@ -405,7 +409,7 @@ somewhere in your project sources. The device-specific header files contain C `e
 for these registers. These, with the help of the device-specific linker scripts, will put your variables
 into the correct memory locations for you. In your C or C++ source file of choice, include the
 device-specific file (or `which_pic32.h`) and define your config fuses as a `const uint32_t` with 
-names following the format `CFG_FUSES_{group}_{register}`.
+names following the format `FUSES_{group}_{register}`.
 
 Group names will be things like `BOOTCFG` or `USERCFG`. Some devices have two of each programmable
 group because their config flash is remappable. In those cases, you would have `BOOTCFG1`, `BOOTCFG2`,
@@ -424,13 +428,13 @@ Here is an example that sets the `FUCFG0` register in the `USERCFG1` section. Th
 on the PIC32CZ CA devices that is used to configure the Watchdog timer.
 
 ```c
-const uint32_t CFG_FUSES_USERCFG1_FUCFG0 = (FUSES_FUCFG0_WDT_ENABLE(0) |
-                                            FUSES_FUCFG0_WDT_WEN(0) |
-                                            FUSES_FUCFG0_WDT_RUNSTDBY(0) |
-                                            FUSES_FUCFG0_WDT_ALWAYSON(0) |
-                                            FUSES_FUCFG0_WDT_PER(0) |
-                                            FUSES_FUCFG0_WDT_WINDOW(0) |
-                                            FUSES_FUCFG0_WDT_EWOFFSET(0));
+const uint32_t FUSES_USERCFG1_FUCFG0 = (FUSES_FUCFG0_WDT_ENABLE(0) |
+                                        FUSES_FUCFG0_WDT_WEN(0) |
+                                        FUSES_FUCFG0_WDT_RUNSTDBY(0) |
+                                        FUSES_FUCFG0_WDT_ALWAYSON(0) |
+                                        FUSES_FUCFG0_WDT_PER(0) |
+                                        FUSES_FUCFG0_WDT_WINDOW(0) |
+                                        FUSES_FUCFG0_WDT_EWOFFSET(0));
 ```
 
 Notice that the group `USERCFG1` is present in the variable name on the left but not in the field
@@ -489,9 +493,9 @@ You can also consult the online CMSIS documentation for more info. This link wil
 describes how to access core peripheral registers in code: <https://arm-software.github.io/CMSIS_6/latest/Core/regMap_pg.html>.
 
 ```{important}
-Remember that CMSIS supports only Cortex-M devices and Cortex-A devices that use ARMv7-A. You are
-currently on your own for accessing registers and peripherals on older devices, but a future version
-of this distribution may add CMSIS-like functionality.
+Remember that CMSIS supports only Cortex-M devices and Cortex-A devices that use ARMv7-A. This
+toolchain provides some CMSIS-like functionality for ARMv4 through ARMv6 devices. You can find those
+files in `arm/include/arm_legacy`.
 ```
 
 
@@ -519,7 +523,7 @@ You can read more about how this works in the Technical Reference Manual for you
 will focus on how to add handlers to your code.
 
 If you want to globally enable or disable interrupts, you can use the `__enable_irq()` and `__disable_irq()`
-functions to do this.
+CMSIS functions to do this.
 
 ### Interrupt Vectors
 Each device-specific header file contains an enum typedef called `IRQn_Type`. Each member's name is
@@ -540,11 +544,11 @@ with `NVIC_EnableIRQ(IRQn_Type irq)` and `NVIC_DisableIRQ(IRQn_Type irq)`. To cl
 for an interrupt, use `NVIC_ClearPendingIRQ(IRQn_Type irq)`. You normally do NOT need to do this in
 your handler, but it is good practice to clear the pending flag when you are first setting up an
 interrupt so that you do not unexpectedly enter your handler. Finally, to set the priority level for
-your interrupt, use `NVIC_SetPriority(IRQn_Type irq, uint32_t prio)`. For ARM devices, *lower* numbers
-mean *higher* priority, so 0 is the highest priority you can use. The lowest priority is configurable
-by whoever made your device. The device-specific headers have the `__NVIC_PRIO_BITS` macro to tell you
-how many bits the priority can use. For example, if `__NVIC_PRIO_BITS` is 3 then the lowest priority
-level is 7.
+your interrupt, use `NVIC_SetPriority(IRQn_Type irq, uint32_t prio)`. For Cortex-M devices, *lower*
+numbers mean *higher* priority, so 0 is the highest priority you can use. The lowest priority is
+configurable by whoever made your device. The device-specific headers have the `__NVIC_PRIO_BITS`
+macro to tell you how many bits the priority can use. For example, if `__NVIC_PRIO_BITS` is 3 then
+the lowest priority level is 7.
 
 Here is an example of setting up the NVIC for your interrupt. Suppose you want to configure an interrupt
 for receiving UART data on SERCOM4. After some digging in the datasheet for your device and the device
@@ -565,12 +569,10 @@ setup to make the interrupt you want work. Refer to the peripheral documentation
 for more info on that.
 
 ### Interrupt Handlers
-You probably noticed that nowhere in the above section did we tell the interrupt controller how to
-handle our interrupt. We need to provide a handler function that is referenced by the interrupt
-controller's IVT, or interrupt vector table. The vector table is defined in the device's startup
-code that gets linked in when you build an app. If you want to see what that is like, you can find
-the startup code (and linker script) for you device in the toolchain install location under 
-`arm/proc/{procname}`.
+We need to provide a handler function that is referenced by the interrupt controller's interrupt
+vector table, or IVT. The vector table is defined in the device's startup code that gets linked in
+when you build an app. If you want to see what that is like, you can find the startup code (and linker
+script) for you device in the toolchain install location under  `arm/proc/{procname}`.
 
 By default, most interrupts will jump to a dummy handler that spins in a while loop forever. To
 provide your own handler, simply define a function in your application with the signature
@@ -623,37 +625,20 @@ extern "C" void HardFault_Handler(void)
 }
 ```
 
-Finally, you may find, after a bunch of debugging, that your processor is ending up in the default
-interrupt handler for some reason. This can be a pain to figure out because simply overriding
-`Default_Handler()` does not have an effect.
+There are two additional handlers you might want to override in your code: the `Default_Handler()`
+and the `Reserved_Handler()`. The default implementations for both simply spin in a loop forver.
+The Default Handler is the handler used when you have not provided your own, so you can define your
+own if you appear to have an interrupt that is entering the Default Handler. The Reserved Handler
+fills in spots in the IVT that are not used at all. It would be very strange for you app to enter a
+reserved space, but you can provide your own handler to handle this case if you want.
 
-```{note}
-I'm not actually sure why that is. I *think* it has something to do with the other interrupt handlers
-aliasing the default one unless you provide your own, but I'm not certain.
+```{admonition} Implementation Detail
+:class: note
+If you look at the startup code, you will see each interrupt handler is by default an alias to a stub
+function that jumps to the Default Handler. Testing indicated that this indirection was needed to let
+you override the Default Handler like any other handler. This presumably is related to how the
+`alias` attribute works.
 ```
-
-As a workaround, the default handler has a hook to let you provide your own processing. You can use
-this to figure out what interrupt just triggered and is using default handler. To do this, create a
-function in your code with signature `int _on_default_handler(void)`. Like the other handlers, you
-**must** declare this as `extern "C"` if you define it in a C++ file. If you want the default handler
-to return so that execution continues, have your function return a non-zero value. Otherwise, the
-default handler will spin in a while loop forever. You could also have your function reset the device.
-
-```c++
-// Remember to include this extern "C" if this is in a C++ file!
-extern "C" int _on_default_handler(void)
-{
-    // Use the SCB->ICSR register to see what interrupt triggered to bring you here. This is slightly
-    // different on some devices, like ones based on the Cortex-M0+. Subtract 16 to get this to match
-    // the values in the IRQn_Type enum.
-    int32_t active_irq = (int32_t)_FLD2VAL(SCB_ICSR_VECTACTIVE, SCB->ICSR) - 16;
-
-    /* Do something with this info. */
-
-    return 1;       // Have the Default_Handler return instead of looping forver.
-}
-```
-
 
 
 ## Interrupts (ARM MPUs)
