@@ -31,7 +31,7 @@ The device-specific header files are located in the toolchain install location u
 subdirectory. When you supply Clang with a device-specific config file, it tells Clang to look for
 headers in this directory. If you have a text editor or IDE that can query the compiler for its include
 directories, like Visual Studio Code, then you should provide it with the `--config` option you supply
-to Clang (see [here](compiling_and_linking.md#device-config-files). That way, any auto-complete features
+to Clang (see [here](compiling_and_linking.md#device-config-files)). That way, any auto-complete features
 the editor has can help you fill in the register or interrupt names you need.
 
 ```{admonition} Implementation Detail
