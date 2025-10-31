@@ -1,21 +1,21 @@
 % Copyright (c) 2025, Jesse DeGuire
 % All rights reserved.
 % Licensed using a BSD 3-clause license, see LICENSE at the root of this project.
-% Find this project on GitHub at https://github.com/jdeguire/pic32clang_docs.
+% Find this project on GitHub at https://github.com/jdeguire/mchpclang_docs.
 %
-% LLVM For PIC32 documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
+% mchpClang documentation master file, created by sphinx-quickstart on Sun Aug 24 15:05:39 2025.
 
-# LLVM For PIC32 Documentation
+# mchpClang Documentation
 *Docs version {{version}}*
 
 ```{todo}
 Find a better theme and see if I can increase the width.
 ```
 
-Welcome! This is a distribution of Clang and LLVM that includes all the support files you need to
-build baremetal projects for Microchip's 32-bit PIC® and SAM devices. You can use this an as
-alternative to Microchip's MPLAB® XC32 compiler, but see the [](#disclaimer) below to see if this is
-right for you.
+Welcome! This is a distribution of Clang and LLVM with a boring name that includes all the support
+files you need to build baremetal projects for Microchip's 32-bit PIC® and SAM devices. You can use
+this as an alternative to Microchip's MPLAB® XC32 compiler, but see the [](#disclaimer) below to see
+if this is right for you.
 
 These documents are not intended to make you an expert in using Clang or LLVM, but they will cover
 some basics. You will want to have at least a little bit of experience running Clang or GCC (Clang is
@@ -37,37 +37,36 @@ using_device_features.md
 ```
 
 ## Supported Devices
-This distribution contains files to support Microchip's PIC32C and SAM series of Cortex®-M microcontrollers.
-I plan to support the SAM MPU devices in the future, but I'm not yet familiar enough with them to do that.
-This will likely not support Microchip's MIPS devices. As of this writing in September 2025, there is no
-MIPS target maintainer in LLVM and MIPS itself is no longer actively developed. This will also likely
-never support the dsPIC33AK series of 32-bit dsPIC® devices because those use a proprietary architecture
-that is not supported by LLVM.
+This distribution contains files to support Microchip's PIC32C and SAM series of ARM® microcontrollers
+and microprocessors. This will likely not support Microchip's MIPS devices. As of this writing in
+October 2025, there is no MIPS target maintainer in LLVM and MIPS itself is no longer actively developed.
+This will also likely never support the dsPIC33AK series of 32-bit dsPIC® devices because those use a
+proprietary architecture that is not supported by LLVM.
 
-
-## This Project's Name
-As of this writing in September 2025, I don't really have a name for this project. I generally refer to
-it as "clang", "LLVM", or "my build of" one of those two. I have used "Pic32Clang" in various places as
-shorthand for "this distribution that works for the PIC32 and SAM devices". However, that cannot be the
-official name because it has "PIC" in the name and that is a trademark of Microchip. Some C preprocessor
-macros also use "pic32" or "PIC32" in their names. Those are for technical reasons, like to provide
-information about the device you are building for, and not for branding.
-
-I am open to suggestions.
+This will never support Microchip's 8- or 16-bit PIC or dsPIC devices because those also use proprietary
+architectures. One could potentially add support for 8-bit AVR® devices because LLVM has an AVR backend
+now, but I am not familiar enough with those devices to do so.
 
 
 ## Trademark Stuff
-Speaking of trademarks, here are the usual trademark notices for names used in these projects.
+This project used to be called "pic32clang_docs" and the toolchains was once called "pic32Clang",
+but I changed the names to avoid any trademark concerns with using "PIC" in the names. Speaking of
+trademarks, here are the usual trademark notices for names used in these projects.
 
-This distribution project and my [](#my-projects) make references to trademarked names from Microchip
-Technology Inc., such as "PIC®", "MPLAB®", and non-trademarked names such as "PIC32", "SAM", and
-"XC32"[^1]. These names are all property of Microchip Technology Inc. These projects also make
-reference to trademarked names from Arm Limited, such as "Arm®", "Cortex®", and "Thumb®" and
+This distribution project and [my projects](#my-projects) make references to trademarked names from
+Microchip Technology Inc., such as "PIC®", "MPLAB®", and non-trademarked names such as "PIC32", "SAM",
+and "XC32"[^1]. These names are all property of Microchip Technology Inc. These projects also make
+references to trademarked names from Arm Limited, such as "Arm®", "Cortex®", and "Thumb®" and
 non-trademarked names such as "CMSIS"[^2]. These names are all property of Arm Limited.
 
 These projects are all independent efforts not affiliated with, endorsed, sponsored, or otherwise
 approved by Microchip Technology, Arm Limited, nor any of the contributors to any of the external
 projects used here.
+
+Some source code, in particular C preprocessor macros, will use "pic32" or "PIC32" in their names.
+Those are for technical reasons, such as to provide information about the device being built for, and
+not for branding. This was done to have some compatibility with similarly-named code used in Microchip's
+XC32 toolchain.
 
 [^1]: Checked August 2025. See the Microchip Trademark Standards document for a list of trademarked names:
 <https://ww1.microchip.com/downloads/aemDocuments/documents/legal/Microchip-Trademark-Standards.pdf>.
@@ -83,13 +82,13 @@ real support team. Finally, you will get support for new devices as they're rele
 more devices, like the MIPS PIC32M and 32-bit dsPIC devices. In other words, Microchip's official
 toolchains provide you with proper integration and a seamless out-of-the-box experience.
 
-With this distribution of Clang for PIC32s, you're getting...not those things. I am just some dude
-on the internet who had apparently too much time on his hands. What you *do* get are the latest and
-greatest that LLVM and Clang have to offer. You get to use the `lld` linker, which is purported to
-offer much faster link times than GNU `ld` and it supports [ThinLTO](http:../share/doc/LLVM/clang/html/ThinLTO.html).
-You get the latest in C++ and C standards support that Clang has to offer. You get access to tools like 
-`clang-tidy`, a static analyzer, `clang-format`, a code formatter, and `clangd`, a language server
-to add some smarts to editors that support the Language Server Protocol.
+With mchpClang, you're getting...not those things. I am just some dude on the internet who had apparently
+too much time on his hands. What you *do* get are the latest and greatest that LLVM and Clang have to
+offer. You get to use the `lld` linker, which is purported to offer much faster link times than GNU
+`ld` and it supports [ThinLTO](http:../share/doc/LLVM/clang/html/ThinLTO.html). You get the latest in
+C++ and C standards support that Clang has to offer. You get access to tools like  `clang-tidy`, a
+static analyzer, `clang-format`, a code formatter, and `clangd`, a language server to add some smarts
+to editors that support the Language Server Protocol.
 
 It is up to you to decide which toolset will best meet your needs. If you need the proper integration
 and support or if you need to use devices supported only by XC32, then you will want to stick with XC32.
@@ -118,8 +117,13 @@ Author: ARM Limited
 Website: <https://www.arm.com/technologies/cmsis>  
 Repository: <https://github.com/ARM-software/CMSIS_6>  
 License: Apache 2.0 <https://github.com/ARM-software/CMSIS_6/blob/main/LICENSE>
+- MyST-Parser  
+Author: The Executable Book Project  
+Website: <https://myst-parser.readthedocs.io/en/latest/index.html>  
+Repository: <https://github.com/executablebooks/MyST-Parser>
+License: MIT <https://github.com/executablebooks/MyST-Parser/blob/master/LICENSE>
 - Sphinx Doc  
-Author: the Sphinx developers  
+Author: The Sphinx developers  
 Website: <https://www.sphinx-doc.org/>  
 Repository: <https://github.com/sphinx-doc/sphinx>  
 License:  BSD 2-clause <https://github.com/sphinx-doc/sphinx/blob/master/LICENSE.rst>  
@@ -132,15 +136,15 @@ substitute for shell scripting. Sphinx is a Python application, too.
 ### My Projects
 In addition, you can find my projects on GitHub at the folloing locations. If you want to build this
 distribution or modify it for your own use, you can use the Python script found at
-<https://github.com/jdeguire/buildPic32Clang>. Follow the README there to get going. The Python
+<https://github.com/jdeguire/buildMchpClang>. Follow the README there to get going. The Python
 files are under the BSD 3-clause license and the CMake caches use the Apache 2.0 license with LLVM
 Exceptions. The latter is because I used example CMake caches from LLVM to make the ones in that
 project.
 
 If you want to generate device files, such as linker scripts, header files, startup code, and device
-config files for your own project, you can find the Python app to do that at <https://github.com/jdeguire/pic32-device-file-maker>.
-You can find the sources for these documents at <https://github.com/jdeguire/pic32clang_docs>. The
-sources for both are under the BSD 3-clause license. The files generated by the `pic32-device-file-maker`
+config files for your own project, you can find the Python app to do that at <https://github.com/jdeguire/atdf-device-file-maker>.
+You can find the sources for these documents at <https://github.com/jdeguire/mchpclang_docs>. The
+sources for both are under the BSD 3-clause license. The files generated by the `atdf-device-file-maker`
 script are under the Apache 2.0 license. This is the license used by ARM's CMSIS 6 and the files I
 generate are based on the example files provided in CMSIS.
 

@@ -1,7 +1,7 @@
 % Copyright (c) 2025, Jesse DeGuire
 % All rights reserved.
 % Licensed using a BSD 3-clause license, see LICENSE at the root of this project.
-% Find this project on GitHub at https://github.com/jdeguire/pic32clang_docs.
+% Find this project on GitHub at https://github.com/jdeguire/mchpclang_docs.
 
 ```{todo}
 Split this chapter up into different sections. Maybe one for accessing peripherals, another for
@@ -55,7 +55,7 @@ Every device supported by this toolchain has a device-specific header file that 
 device's perpheral registers, config registers, interrupt vector values, and so on. These are located
 in the toolchain install location under the `arm/include/proc` subdirectory. However, you do not have
 to explictly include the device-specific header if you do not want to. Instead, you can include the
-`which_pic32.h` header and that will figure out which device-specific header you need. For this to
+`which_device.h` header and that will figure out which device-specific header you need. For this to
 work, you need to supply Clang with the proper `--config` file option for your device.
 
 If you are working on a project that you want to build both with Clang and Microchip's XC32 compiler,
@@ -63,7 +63,7 @@ then you can use this snippet to select the correct file.
 
 ```c
 #ifdef __clang__
-#  include <which_pic32.h>
+#  include <which_device.h>
 #else
 #  include <xc.h>
 #endif
@@ -408,7 +408,7 @@ For C and C++ files, you set the values of these registers by defining specially
 somewhere in your project sources. The device-specific header files contain C `extern` declarations
 for these registers. These, with the help of the device-specific linker scripts, will put your variables
 into the correct memory locations for you. In your C or C++ source file of choice, include the
-device-specific file (or `which_pic32.h`) and define your config fuses as a `const uint32_t` with 
+device-specific file (or `which_device.h`) and define your config fuses as a `const uint32_t` with 
 names following the format `FUSES_{group}_{register}`.
 
 Group names will be things like `BOOTCFG` or `USERCFG`. Some devices have two of each programmable

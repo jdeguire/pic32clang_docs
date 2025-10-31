@@ -7,10 +7,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 # ----------------------------------------------------------------------------
 
-project = 'LLVM For PIC32'
+project = 'mchpClang'
 copyright = '2025, Jesse DeGuire'
 author = 'Jesse DeGuire'
-doc_version = '0.1.0'
+doc_version = '0.2.0'
 
 
 # -- General configuration ---------------------------------------------------

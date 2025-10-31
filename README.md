@@ -1,11 +1,13 @@
-# pic32clang_docs
+# mchpclang_docs
+_This project used to be called "pic32clang_docs", but I changed it to avoid any trademark concerns
+with using "PIC" in the name._
 
-This repository contains documentation specific to Pic32Clang, which is a distribution of LLVM set
-up for use with Microchip PIC32C and SAM processors. This is meant to be run with the `buildPic32Clang`
-script found [here](https://github.com/jdeguire/buildPic32Clang), but you can also run this on its own.
+This repository contains documentation specific to mchpClang, which is a distribution of LLVM set
+up for use with Microchip PIC32C and SAM processors. This is meant to be run with the `buildMchpClang`
+script found [here](https://github.com/jdeguire/buildMchpClang), but you can also run this on its own.
 
 ## Prerequisites
-If you are planning on running the `buildPic32Clang` script referenced above, then you can follow the
+If you are planning on running the `buildMchpClang` script referenced above, then you can follow the
 README in that project to get everything you need. Otherwise, these instructions should help you get
 going.
 
