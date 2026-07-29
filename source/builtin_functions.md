@@ -96,7 +96,97 @@ when and how to use these instructions.
 
 
 ## Cache Maintenance Functions
-TODO
+CMSIS provides functions for handling caches on both the microcontroller and microprocessor devices,
+though the function names differ for the two device sets.
+
+Cache operations affect a whole line of cache. On the microcontrollers, this is fixed at 32 bytes.
+On microprocessors, this varies and there is a register you can read to give you info about the cache.
+Cache lines are always aligned to their width. For example, the lines on the microcontrollers will
+always be aligned to 32-byte address boundaries.
+
+While you can specify the cache line to operate on directly, you pretty much never need to do that.
+Instead, you can provide the address you want to operate on and the cache logic will figure out the
+line for you. The entire line of cache containing that address is affected. If that address is not
+in the cache, then the operation does nothing.
+
+Besides enabling or disabling the caches, there are two operations you will do with them: *clean*
+and *invalidate*. A *clean* operation writes the contents of the cache line back to memory. If you
+have a DMA peripheral that you wanted to read from a buffer in memory, then you would want to clean
+all of the addresses that make up that buffer before starting the DMA operation. The DMA cannot see
+into the cache and so you need to do this to prevent the peripheral from seeing stale data. Note that
+if your buffer if really huge, then you might be better off just cleaning the whole cache. An
+*invalidate* operation tells the cache that the line is no longer valid and thus should be re-read
+from memory. Continuing our DMA example, you would want to do this before reading data from a buffer
+that DMA has just written to. Otherwise, you will see stale cached data instead of what the DMA has
+written.
+
+Instruction caches are used only to hold previously-fetched instructions and so they are never written
+to. Therefore, clean operations do not apply to them because there is not really anything to clean.
+
+### Cache Functions for Microcontrollers
+The startup code that runs before `main()` enables the caches for you on microcontroller parts.
+These functions include the proper memory barrier instructions, so you do not need to handle that.
+Microcontrollers have separate data and instruction caches, indicated here by "DCache" and "ICache",
+respectively.
+
+- `void SCB_EnableICache(void)`  
+`void SCB_EnableDCache(void)`  
+Enable the given cache.
+- `void SCB_DisableICache(void)`  
+`void SCB_DisableDCache(void)`  
+Disable the given cache. The data cache is both cleaned and invalidated after it is disabled.
+- `void SCB_InvalidateICache(void)`  
+`void SCB_InvalidateDCache(void)`  
+Invalidate the given cache.
+- `void SCB_CleanDCache(void)`  
+Clean the entire data cache.
+- `void SCB_CleanInvalidateDCache(void)`  
+Clean and invalidate the entire data cache.
+- `void SCB_InvalidateICache_by_Addr(volatile void *addr, int32_t size)`  
+`void SCB_InvalidateDCache_by_Addr(volatile void *addr, int32_t size)`  
+`void SCB_CleanDCache_by_Addr(volatile void *addr, int32_t size)`  
+`void SCB_CleanInvalidateDCache_by_Addr(volatile void *addr, int32_t size)`  
+Perform the stated operation on a chunk of cache starting at the line containing `addr`. This function
+will operate on a number of cache lines to cover the number of bytes given by `size`. If `addr` is
+not 32-byte aligned or `size` is not a multiple of 32 bytes, then this will include more memory than
+indicated since operations work on whole 32-byte cache lines.
+
+### Cache Functions for Microprocessors
+Most devices with caches use separate data and instruction caches. If your device has unified caches,
+then use the data cache functions for it. The startup code does NOT enable caches for you, so you
+will want to do that yourself, probably after you set up the MMU. These functions include the proper
+memory barrier instructions, so you do not need to handle that.
+
+The cache line size is depedent on your CPU type (Cortex-A7 vs ARM926, for exmaple) and might even
+differ for the instruction and data caches. There are CP15 registers you can read to get more info
+about your cache if you want something you can use at runtime. Use `__get_CACHETYPE()` on ARMv6 and
+older devices or `__get_CCSIDR()` on newer devices. You will need to consult the Reference Manual
+for you CPU to figure out how to use those registers. You might also be able to look up the info you
+need online for your device.
+
+- `L1C_EnableCaches(void)`  
+Enable all L1 caches.
+- `L1C_DisableCaches(void)`  
+Disable all L1 caches.
+- `L1C_EnableBTAC(void)`  
+Enable branch prediction if your CPU has it.
+- `L1C_DisableBTAC(void)`  
+Disable branch prediction.
+- `void L1C_InvalidateBTAC(void)`  
+Invalidate the branch predictor cache.
+- `void L1C_InvalidateICacheMVA(void *va)`  
+Invalidate the instruction cache line containing the given virtual address.
+- `void L1C_InvalidateICacheAll(void)`  
+Invalidate the entire instruction cache.
+- `void L1C_CleanDCacheMVA(void *va)`  
+`void L1C_InvalidateDCacheMVA(void *va)`  
+`L1C_CleanInvalidateDCacheMVA(void *va)`  
+Perform the given operation on the data cache line containing the given virtual address.
+- `void L1C_CleanDCacheAll(void)`  
+`void L1C_InvalidateDCacheAll(void)`  
+`L1C_CleanInvalidateDCacheAll(void)`  
+Perform the given operation on the entire data cache.
+
 
 ## System Control Functions
 TODO
