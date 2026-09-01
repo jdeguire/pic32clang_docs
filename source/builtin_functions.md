@@ -45,7 +45,7 @@ You will need to consult your device's datasheet to learn how to perform a reset
 microprocessor device.
 
 
-## Memory Barrier Functions
+## Memory Barriers
 Most ARM processors support three types of "memory barrier" instructions. These are instructions or
 sequences that forces the CPU to apply some ordering to memory operations that occur before and after
 the instruction. You use these instructions when you need to ensure that a memory access happens in
@@ -95,7 +95,7 @@ barrier" online yields some useful results from ARM's developer site, including 
 when and how to use these instructions.
 
 
-## Cache Maintenance Functions
+## Cache Maintenance
 CMSIS provides functions for handling caches on both the microcontroller and microprocessor devices,
 though the function names differ for the two device sets.
 
@@ -206,13 +206,84 @@ Oddly enough, CMSIS as of this writing does not appear to provide a `L2C_CleanAl
 You might need to implement that yourself using one of the similar functions as a guide.
 
 
-## System Control Functions
+## System Control
 CMSIS (and the legacy ARM support provided by mchpClang) provide functions for accessing system
 control registers. These are implemented as static inline functions that usually map directly to
 assembly instructions.
 
+### Micorcontroller System Registers
+Most system control functions are accessed through memory-mapped registers in the Private Peripheral
+Bus space. This starts at memory address 0xE000_0000 and ends at 0xE00F_FFFF. CMSIS provides pointers
+you can access register sets through, such as `SCB` for accessing registers in the System Control Block,
+`SysTick` for accessing the SysTick timer, `FPU` for accessing FPU control registers, and `MPU` for
+accessing the Memory Protection Unit. You access these like you would any other pointer-to-struct.
 
-### CP15 Access Functions for Microprocessors
+```c
+SysTick->LOAD = 10000;
+MPU->RNR = 0;
+uint32_t cpuid = SCB->CPUID;
+```
+
+You should have a look at the Technical Reference Manual for your CPU to see what is available because
+there are plenty of registers that vary by CPU type. You can also have a look at the CPU-specific
+header (`core_cmN.h`) that is included through your device-specific header. If your device supports
+the Cortex-M Security Extensions, then there will also be pointers ending in `_NS` such as `SCB_NS`
+and `SysTick_NS` for non-secure access.
+
+There are some registers that are accessed through instructions rather than the Private Peripheral
+Bus. CMSIS provides static inline functions to access these. All of the "get" functions will return
+`uint32_t` and all of the "set" functions take a `uint32_t` as its only argument. Here is a list of
+some of those functions. They are formatted as `__get_REGNAME()` and `__set_REGNAME(val)`. This list
+will not go explain what these registers do. Again, you should check the docs for your CPU or the
+CPU-specific CMSIS header file to see what else is available for you.
+
+- `__get_CONTROL()` / `__set_CONTROL(val)`
+- `__get_IPSR()`
+- `__get_APSR()`
+- `__get_xPSR()` (yes, this has a lower-case `x`)
+- `__get_PSP()` / `__set_PSP(val)`
+- `__get_MSP()` / `__set_MSP(val)`
+- `__get_PRIMASK()` / `__set_PRIMASK(val)`
+- `__get_BASEPRI()` / `__set_BASEPRI(val)`
+- `__get_FAULTMASK()` / `__set_FAULTMASK(val)`
+- `__get_PSPLIM()` / `__set_PSPLIM(val)` (only for devices with CMSE)
+- `__get_MSPLIM()` / `__set_MSPLIM(val)` (only for devices with CMSE)
+- `__get_FPSCR()` / `__set_FPSCR(val)`  (only if an FPU is present)
+
+If your CPU supports the Cortex-M Security Extensions, then some of these will have variants to
+access non-secure versions of these registers. These are of the forms `__TZ_get_REGNAME_NS()` and
+`__TZ_set_REGNAME_NS(val)`. This applies to registers that can be both written and read.
+
+### Microprocessor System Registers
+Most system control functions are accessed through coprocessor 15 on the microprocessor devices.
+That is covered in the next section, but there are a few system registers that are available outside
+it.
+
+All of the "set" functions you will see here take a `uint32_t` as its only argument and all "get"
+functions return a `uint32_t`.
+
+The main one is the *Current Program Status Register* or CPSR. You can read this using `__get_CPSR()`
+and write it using `__set_CPSR(val)`. If you want to read just the processor mode bits, whch are the
+low 5 bits of CPSR, then you can use `__get_mode()`. You can also use `__set_mode(val)` to set the
+processor mode, but be careful because this actually sets the low **8** bits of the CPSR register.
+These are the `I`, `F`, and `T` flags and the 5 bits that make up the processor mode. This is because
+`__set_mode()` outputs the `MSR cpsr_c` instruction, which updates the low byte of CPSR.
+
+There is no set of functions to access SPSR, so you would need to make your own for that. You can
+use the CPSR functions as a starting point.
+
+If your device has an FPU, there are a few extra control registers you can access. The read-only
+FPSID register is accessed with `__get_FPSID()`. You can access FPSCR with `__get_FPSCR()` and
+`__set_FPSCR(val)` and FPEXC with `__get_FPEXC()` and `__set_FPEXC(val)`. The C startup code for the
+microprocessors enables and initializes the FPU, if present, with `__FPU_Enable(void)`.
+
+While not a system control register, you can use `__get_SP()` and `__set_SP(val)` to access the
+current stack pointer register (R13). Each processor mode has its own banked stack pointer (the
+"system" and "user" modes share the same register set), so these functions access the one for the
+current mode. The C startup code for the microprocessors uses `__set_SP(val)` and `__set_mode(val)`
+together to initialize the stacks for the different processors modes.
+
+### CP15 Access
 ARM microprocessors use coprocessor 15 (CP15) to act as the System Control coprocessor. This gives
 you a way to control things like the caches, MMU, and TLB. It also provides information about the
 CPU core. CP15 registers are read using the `MRC` instruction and written using the `MCR` instruction.
@@ -235,11 +306,11 @@ registers overlap. This is because some registers have different meanings depend
 are available on your specific device. For example, some registers change meaning if your device has
 a memory management unit (MMU) versus a memory protection unit (MPU).
 
-This is not an exhaustive list. Have a look at `arm/include/arm_legacy/arm_cp15.h` (older devices)
-and `CMSIS/Core/include/a-profile/cmsis_cp15.h` (Cortex and newer devices) in the toolchain install
-location to see the full set of functions you can use. Also, unless otherwise noted, "get" functions
-return a `uint32_t` and take no arguments while "set" functions return nothing and take a `uint32_t`
-argument.
+This list has most, but not all, registers. Have a look at `arm/include/arm_legacy/arm_cp15.h` (older
+devices) and `CMSIS/Core/include/a-profile/cmsis_cp15.h` (Cortex and newer devices) in the toolchain
+install location to see the full set of functions you can use. Also, unless otherwise noted, "get"
+functions return a `uint32_t` and take no arguments while "set" functions return nothing and take a
+`uint32_t` argument.
 
 ```{list-table} CP15 Functions
 :header-rows: 1
@@ -397,7 +468,7 @@ argument.
 *   - N/A
     - `__set_DSB(val)`
     - 0, c7, c10, 4
-    - Another name for `__set_DSB()`
+    - Another name for `__set_DWB()`
 *   - N/A
     - `__set_DMB(val)`
     - 0, c7, c10, 5
@@ -488,9 +559,12 @@ argument.
     - N/A
     - 4, c15, c0, 0
     - Configuration Base Address Register
-
 ```
 
-## Compiler Built-in Functions
-TODO
+## Compiler Built-ins
+Clang has lots of built-in functions. Rather than trying to duplicate them in this document, here
+are links to the relevant sections of Clang documentation.
+
+Online: <https://clang.llvm.org/docs/LanguageExtensions.html#builtin-functions>  
+Local: [Built-in Functions](llvm:clang/html/LanguageExtensions.html#builtin-functions)
 

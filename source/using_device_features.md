@@ -774,7 +774,7 @@ request to handle. The AIC does allow you to specify some interrupts as FIQ inte
 this example will not do that to keep things simple. Clang provides the `interrupt` and `interrupt_save_fp`
 attributes to tell it that a function is an interrupt handler. The compiler will take care of setting
 up the stack, using the correct return sequence, and saving the proper registers. The former does not
-save FPU registers and the latter does. The attribute takes an optional argument telling it was kind
+save FPU registers and the latter does. The attribute takes an optional argument telling it what kind
 of interrupt is being handled; we will use "IRQ" here but we could use "FIQ" for an FIQ handler.
 
 ```c++
