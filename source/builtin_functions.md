@@ -76,7 +76,7 @@ following this to be re-fetched after this completes. This is useful for ensurin
 instructions "see" a new system state, such as changes in system control registers or cache state.
 On newer ARM cores, this is an explicit `isb` instruction. On ARMv6, this is called a "Prefetch
 Buffer Flush" and writes to CP15 register 7.  
-On ARMv5 and older, this was called a "Instruction Memory Barrier" and is implementation-specific.
+On ARMv5 and older, this was called an "Instruction Memory Barrier" and is implementation-specific.
 The implementation provided by mchpClang follows Section 2.7.4 in Part A of the ARMv5TE Reference
 Manual, which says that a restricted form of IMB can simply be any instruction other than `b`, `bl`,
 or `blx` that updates PC. This implementation therefore uses a dummy `ldr pc, ...` to update the PC
@@ -91,7 +91,7 @@ not "see" a stale device state.
 You may want to do some extra reading to better understand when and how to use these. It's okay, *I*
 also need to do some extra reading because it can be confusing at times. Searching for "arm memory
 barrier" online yields some useful results from ARM's developer site, including a document titled
-"ARM Cortex-M Programming Guide to Memory Barrier Instructions". That document provides good info on
+"ARM Cortex®-M Programming Guide to Memory Barrier Instructions". That document provides good info on
 when and how to use these instructions.
 
 
@@ -114,7 +114,7 @@ and *invalidate*. A *clean* operation writes the contents of the cache line back
 have a DMA peripheral that you wanted to read from a buffer in memory, then you would want to clean
 all of the addresses that make up that buffer before starting the DMA operation. The DMA cannot see
 into the cache and so you need to do this to prevent the peripheral from seeing stale data. Note that
-if your buffer if really huge, then you might be better off just cleaning the whole cache. An
+if your buffer is really huge, then you might be better off just cleaning the whole cache. An
 *invalidate* operation tells the cache that the line is no longer valid and thus should be re-read
 from memory. Continuing our DMA example, you would want to do this before reading data from a buffer
 that DMA has just written to. Otherwise, you will see stale cached data instead of what the DMA has
@@ -164,13 +164,13 @@ older devices or `__get_CCSIDR()` on newer devices. You will need to consult the
 for you CPU to figure out how to use those registers. You might also be able to look up the info you
 need online for your device.
 
-- `L1C_EnableCaches(void)`  
+- `void L1C_EnableCaches(void)`  
 Enable all L1 caches.
-- `L1C_DisableCaches(void)`  
+- `void L1C_DisableCaches(void)`  
 Disable all L1 caches.
-- `L1C_EnableBTAC(void)`  
+- `void L1C_EnableBTAC(void)`  
 Enable branch prediction if your CPU has it.
-- `L1C_DisableBTAC(void)`  
+- `void L1C_DisableBTAC(void)`  
 Disable branch prediction.
 - `void L1C_InvalidateBTAC(void)`  
 Invalidate the branch predictor cache.
@@ -180,17 +180,316 @@ Invalidate the instruction cache line containing the given virtual address.
 Invalidate the entire instruction cache.
 - `void L1C_CleanDCacheMVA(void *va)`  
 `void L1C_InvalidateDCacheMVA(void *va)`  
-`L1C_CleanInvalidateDCacheMVA(void *va)`  
+`void L1C_CleanInvalidateDCacheMVA(void *va)`  
 Perform the given operation on the data cache line containing the given virtual address.
 - `void L1C_CleanDCacheAll(void)`  
 `void L1C_InvalidateDCacheAll(void)`  
-`L1C_CleanInvalidateDCacheAll(void)`  
+`void L1C_CleanInvalidateDCacheAll(void)`  
 Perform the given operation on the entire data cache.
+
+If your device also has an L2 cache, then there are additional functions you can use to manipulate
+that. They differ a bit from the above functions in the that L2 cache is unified--instructions and
+data use the same cache. Here are the functions CMSIS makes available.
+
+- `void L2C_Sync(void)`
+- `int L2C_GetID(void)`
+- `int L2C_GetType(void)`
+- `void L2C_InvAllByWay(void)`
+- `void L2C_CleanInvAllByWay(void)`
+- `void L2C_Enable(void)`
+- `void L2C_Disable(void)`
+- `void L2C_InvPa(void *pa)`
+- `void L2C_CleanPa(void *pa)`
+- `void L2C_CleanInvPa(void *pa)`
+
+Oddly enough, CMSIS as of this writing does not appear to provide a `L2C_CleanAllByWay()` function.
+You might need to implement that yourself using one of the similar functions as a guide.
 
 
 ## System Control Functions
-TODO
-CP15 registers on the microprocessors and control registers on the microcontrollers.
+CMSIS (and the legacy ARM support provided by mchpClang) provide functions for accessing system
+control registers. These are implemented as static inline functions that usually map directly to
+assembly instructions.
+
+
+### CP15 Access Functions for Microprocessors
+ARM microprocessors use coprocessor 15 (CP15) to act as the System Control coprocessor. This gives
+you a way to control things like the caches, MMU, and TLB. It also provides information about the
+CPU core. CP15 registers are read using the `MRC` instruction and written using the `MCR` instruction.
+The instructions look like this.
+
+```
+MRC p15, Op1, Rt, CRn, CRm, Op2
+MCR p15, Op1, Rs, CRn, CRm, Op2
+```
+
+Here, `Rt` is the target general-purpose register for reads and `Rs` is the source register for writes.
+The other fields are used to select the CP15 register to access. `CRn` selects the category of CP15
+registers. For example, `c0` is for CPU info and `c7` is for cache maintenance registers. The other
+operands select the specific register variant within the category. In practice, `Op1` is almost always
+zero.
+
+Of course, not all CPUs will have all of these registers. You will need to consult the Technical
+Reference Manual for your CPU to see what is actually avaialble. You also might notice some of the
+registers overlap. This is because some registers have different meanings depending on what features
+are available on your specific device. For example, some registers change meaning if your device has
+a memory management unit (MMU) versus a memory protection unit (MPU).
+
+This is not an exhaustive list. Have a look at `arm/include/arm_legacy/arm_cp15.h` (older devices)
+and `CMSIS/Core/include/a-profile/cmsis_cp15.h` (Cortex and newer devices) in the toolchain install
+location to see the full set of functions you can use. Also, unless otherwise noted, "get" functions
+return a `uint32_t` and take no arguments while "set" functions return nothing and take a `uint32_t`
+argument.
+
+```{list-table} CP15 Functions
+:header-rows: 1
+:widths: "auto"
+*   - Read
+    - Write
+    - Op1, CRn, CRm, Op2
+    - Description
+*   - `__get_MAINID()`
+    - N/A
+    - 0, c0, c0, 0
+    - Main ID Register
+*   - `__get_CACHETYPE()`
+    - N/A
+    - 0, c0, c0, 1
+    - Cache Type Register
+*   - `__get_TCMSTATUS()`
+    - N/A
+    - 0, c0, c0, 2
+    - TCM Status Register
+*   - `__get_TLBTYPE()`
+    - N/A
+    - 0, c0, c0, 3
+    - TLB Type Register
+*   - `__get_MPUTYPE()`
+    - N/A
+    - 0, c0, c0, 4
+    - Main ID Register
+*   - `__get_MPIDR()`
+    - N/A
+    - 0, c0, c0, 5
+    - Multiprocessor Affinity Register
+
+*   - `__get_SCTLR()`
+    - `__set_SCTLR(val)`
+    - 0, c1, c0, 0
+    - System Control Register
+*   - `__get_ACTLR()`
+    - `__set_ACTLR(val)`
+    - 0, c1, c0, 1
+    - Auxiliary Control Register
+*   - `__get_CPACR()`
+    - `__set_CPACR(val)`
+    - 0, c1, c0, 2
+    - Coprocess Access Control Register
+
+*   - `__get_TTBR0()`
+    - `__set_TTBR0(val)`
+    - 0, c2, c0, 0
+    - Translation Table Base Register 0
+*   - `__get_TTBR1()`
+    - `__set_TTBR1(val)`
+    - 0, c2, c0, 1
+    - Translation Table Base Register 1
+*   - `__get_TTBCTRL()`
+    - `__set_TTBCTRL(val)`
+    - 0, c2, c0, 2
+    - Translation Table Base Control Register
+*   - `__get_MPUDCC()`
+    - `__set_MPUDCC(val)`
+    - 0, c2, c0, 0
+    - MPU Data Cache Control Register
+*   - `__get_MPUICC()`
+    - `__set_MPUICC(val)`
+    - 0, c2, c0, 1
+    - MPU Instruction Cache Control Register
+
+*   - `__get_DACR()`
+    - `__set_DACR(val)`
+    - 0, c3, c0, 0
+    - Domain Access Control Register
+*   - `__get_MPUWBC()`
+    - `__set_MPUWBC(val)`
+    - 0, c3, c0, 0
+    - MPU Write Buffer Control Register
+
+*   - `__get_DFSR()`
+    - `__set_DFSR(val)`
+    - 0, c5, c0, 0
+    - Data Fault Status Register
+*   - `__get_IFSR()`
+    - `__set_IFSR(val)`
+    - 0, c5, c0, 1
+    - Instruction Fault Status Register
+
+*   - `__get_DFAR()`
+    - `__set_DFAR(val)`
+    - 0, c6, c0, 0
+    - Data Fault Address Register
+*   - `__get_WFAR()`
+    - `__set_WFAR(val)`
+    - 0, c6, c0, 1
+    - Watchpoint Fault Address Register
+*   - `__get_IFAR()`
+    - `__set_IFAR(val)`
+    - 0, c6, c0, 2
+    - Instruction Fault Address Register
+
+*   - N/A
+    - `__set_WFI(val)`
+    - 0, c7, c0, 4
+    - Drain write buffers, put CPU to sleep, and wait for interrupt
+*   - N/A
+    - `__set_ICIALLU(val)`
+    - 0, c7, c5, 0
+    - Instruction cache invalidate all
+*   - N/A
+    - `__set_ICIMVAC(val)`
+    - 0, c7, c5, 1
+    - Instruction cache invalidate by virtual address
+*   - N/A
+    - `__set_ICISW(val)`
+    - 0, c7, c5, 2
+    - Instruction cache invalidate by set/way
+*   - N/A
+    - `__set_PFBF(val)`
+    - 0, c7, c5, 4
+    - Prefetch buffer flush (older name for ISB)
+*   - N/A
+    - `__set_ISB(val)`
+    - 0, c7, c5, 4
+    - Another name for `__set_PFBF()`
+*   - N/A
+    - `__set_BPIALL(val)`
+    - 0, c7, c5, 6
+    - Branch predictor invalidate all
+*   - N/A
+    - `__set_DCIALLU(val)`
+    - 0, c7, c6, 0
+    - Data cache invalidate all
+*   - N/A
+    - `__set_DCIMVAC(val)`
+    - 0, c7, c6, 1
+    - Data cache invalidate by virtual address
+*   - N/A
+    - `__set_DCISW(val)`
+    - 0, c7, c6, 2
+    - Data cache invalidate by set/way
+*   - N/A
+    - `__set_IDCIALLU(val)`
+    - 0, c7, c7, 0
+    - Instruction and data cache invalidate all
+*   - N/A
+    - `__set_DCCMVAC(val)`
+    - 0, c7, c10, 1
+    - Data cache clean by virtual address
+*   - N/A
+    - `__set_DCCSW(val)`
+    - 0, c7, c10, 2
+    - Data cache clean by set/way
+*   - N/A
+    - `__set_DWB(val)`
+    - 0, c7, c10, 4
+    - Drain write buffer (older name for DSB)
+*   - N/A
+    - `__set_DSB(val)`
+    - 0, c7, c10, 4
+    - Another name for `__set_DSB()`
+*   - N/A
+    - `__set_DMB(val)`
+    - 0, c7, c10, 5
+    - Data memory barrier (ARMv6 only)
+*   - N/A
+    - `__set_ICPFMVAC(val)`
+    - 0, c7, c13, 1
+    - Instruction cache prefetch by virtual address
+*   - N/A
+    - `__set_DCCIMVAC(val)`
+    - 0, c7, c14, 1
+    - Data cache clean and invalidate by virtual address
+*   - N/A
+    - `__set_DCCISW(val)`
+    - 0, c7, c14, 2
+    - Data cache clean and invalidate by set/way
+
+*   - N/A
+    - `__set_TLBIALL(val)`
+    - 0, c8, c7, 0
+    - TLB invalidate all
+*   - N/A
+    - `__set_TLBIMVA(val)`
+    - 0, c8, c7, 1
+    - TLB invalidate by virtual address
+*   - N/A
+    - `__set_TLBIASID(val)`
+    - 0, c8, c7, 2
+    - TLB invalidate by ASID
+
+*   - `__get_DCLDR()`
+    - `__set_DCLDR(val)`
+    - 0, c9, c0, 0
+    - DCache Lockdown Register
+*   - `__get_ICLDR()`
+    - `__set_ICLDR(val)`
+    - 0, c9, c0, 1
+    - ICache Lockdown Register
+*   - `__get_DTCMRR()`
+    - `__set_DTCMRR(val)`
+    - 0, c9, c1, 0
+    - Data TCM Region Register
+*   - `__get_ITCMRR()`
+    - `__set_ITCMRR(val)`
+    - 0, c9, c1, 1
+    - Instruction TCM Region Register
+
+*   - `__get_TLBLDR()`
+    - `__set_TLBLDR(val)`
+    - 0, c10, c0, 0
+    - TLB Lockdown Register
+
+*   - `__get_VBAR()`
+    - `__set_VBAR(val)`
+    - 0, c12, c0, 0
+    - Vector Base Address Register
+*   - `__get_MVBAR()`
+    - `__set_MVBAR(val)`
+    - 0, c12, c0, 1
+    - Monitor Vector Base Address Register
+*   - `__get_ISR()`
+    - N/A
+    - 0, c12, c1, 0
+    - Interrupt Status Register
+
+*   - `__get_FCSEPID()`
+    - `__set_FCSEPID(val)`
+    - 0, c13, c0, 0
+    - Fast Context Switch Extension Process ID Register
+*   - `__get_FCSECTX()`
+    - `__set_FCSECTX(val)`
+    - 0, c13, c0, 1
+    - Fast Context Switch Extension Context ID Register
+
+*   - `__get_CSSIDR()`
+    - N/A
+    - 1, c0, c0, 0
+    - Current Cache Size ID Register
+*   - `__get_CLIDR()`
+    - N/A
+    - 1, c0, c0, 1
+    - Cache Level ID Register
+*   - `__get_CSSELR()`
+    - `__set_CSSELR(val)`
+    - 2, c0, c0, 0
+    - Cache Size Selection Register
+*   - `__get_CBAR()`
+    - N/A
+    - 4, c15, c0, 0
+    - Configuration Base Address Register
+
+```
 
 ## Compiler Built-in Functions
 TODO

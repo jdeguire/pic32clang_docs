@@ -10,7 +10,7 @@
 project = 'mchpClang'
 copyright = '2025, Jesse DeGuire'
 author = 'Jesse DeGuire'
-doc_version = '0.2.1'
+doc_version = '0.2.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -62,13 +62,16 @@ html_theme_path = [
 # Theme and options for that theme
 # You can use a built-in theme if this does not work. The "classic" theme will work and looks like
 # old Python documentation.
-# TODO: Follow the stuff here to make the content area wider since these options do not work:
-#       https://stackoverflow.com/questions/23211695/modifying-content-width-of-the-sphinx-theme-read-the-docs
 html_theme = 'sphinx_rtd_theme'
-html_theme_options = {
-    'sidebarwidth': '250',
-    'body_max_width': '1000'
-}
+
+# We need a custom CSS file to make the ReadTheDocs theme less narrow. This was take from StackOverflow.
+# Source - https://stackoverflow.com/a/57840173
+# Posted by Jose Cherian, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-09-01, License - CC BY-SA 4.0
+html_css_files = [
+    'custom.css',
+]
+
 
 # To link to external documents, we have to tell MyST how to find them. Otherwise, it will try to
 # look relative to the source file, which isn't what we want. MyST handles http, https, mailto, and
